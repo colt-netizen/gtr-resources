@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTM ROI Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .calc { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 40px; }
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { font-size: 32px; color: #1a1a1a; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 16px; }
+        .inputs { display: flex; flex-direction: column; gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: 600; color: #1a1a1a; font-size: 14px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .help { font-size: 12px; color: #999; }
+        .btn { padding: 14px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.3); }
+        .results { display: none; gap: 20px; }
+        .result-card { padding: 24px; border-radius: 8px; color: white; text-align: center; }
+        .warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .info { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .result-number { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+        .result-label { font-size: 14px; opacity: 0.9; }
+        .rec-box { background: #f0f4ff; border-left: 4px solid #667eea; padding: 20px; border-radius: 6px; margin: 20px 0; }
+        .rec-box h3 { color: #667eea; margin-bottom: 10px; }
+        .rec-box p { color: #333; line-height: 1.6; }
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .metric { background: #f9f9f9; padding: 16px; border-radius: 6px; border: 1px solid #eee; }
+        .metric span { font-size: 12px; color: #666; }
+        .metric strong { font-size: 18px; color: #1a1a1a; display: block; margin-top: 8px; }
+        .cta { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 8px; color: white; text-align: center; margin: 20px 0; }
+        .cta h3 { margin-bottom: 8px; }
+        .cta p { margin-bottom: 16px; opacity: 0.9; }
+        .cta a { display: inline-block; padding: 12px 24px; background: white; color: #667eea; text-decoration: none; border-radius: 6px; font-weight: 600; }
+        .hidden { display: none !important; }
+        footer { text-align: center; color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="calc">
+        <header>
+            <h1>GTM ROI Calculator</h1>
+            <p class="subtitle">See how much you're wasting on inefficient GTM</p>
+        </header>
+
+        <div id="inputs" class="inputs">
+            <div class="input-group">
+                <label>Annual Revenue (ARR)</label>
+                <input type="number" id="arr" value="1000000" placeholder="1000000">
+                <span class="help">Your current annual recurring revenue</span>
+            </div>
+            <div class="input-group">
+                <label>Annual Marketing Spend</label>
+                <input type="number" id="marketing" value="50000" placeholder="50000">
+                <span class="help">Total spent on marketing, content, ads, etc.</span>
+            </div>
+            <div class="input-group">
+                <label>Annual Sales Spend</label>
+                <input type="number" id="sales" value="75000" placeholder="75000">
+                <span class="help">Salaries, commissions, sales tools, etc.</span>
+            </div>
+            <div class="input-group">
+                <label>GTM Team Size</label>
+                <input type="number" id="team" value="5" min="1" placeholder="5">
+                <span class="help">Number of people on sales/marketing team</span>
+            </div>
+            <button class="btn" onclick="calculate()">Calculate My ROI</button>
+        </div>
+
+        <div id="results" class="results hidden">
+            <div class="result-card warning">
+                <div class="result-number" id="wasted">$0</div>
+                <div class="result-label">Wasted Annual Spend</div>
+                <div id="wasted-pct">0% of GTM budget</div>
+            </div>
+            <div class="result-card success">
+                <div class="result-number" id="savings">$0</div>
+                <div class="result-label">Potential Annual Savings</div>
+                <div>With optimized GTM</div>
+            </div>
+            <div class="result-card info">
+                <div class="result-number" id="revenue">$0</div>
+                <div class="result-label">Additional Revenue Potential</div>
+                <div>By reallocating wasted spend</div>
+            </div>
+
+            <div class="rec-box">
+                <h3>Your GTM Diagnosis</h3>
+                <p id="recommendation"></p>
+            </div>
+
+            <div class="metrics">
+                <div class="metric">
+                    <span>Current Cost Per $1M Revenue:</span>
+                    <strong id="cpp">$0</strong>
+                </div>
+                <div class="metric">
+                    <span>Estimated Current CAC:</span>
+                    <strong id="cac">$0</strong>
+                </div>
+                <div class="metric">
+                    <span>Optimized CAC (Potential):</span>
+                    <strong id="opt-cac">$0</strong>
+                </div>
+                <div class="metric">
+                    <span>Total GTM Spend:</span>
+                    <strong id="total">$0</strong>
+                </div>
+            </div>
+
+            <div class="cta">
+                <h3>Want to Fix This?</h3>
+                <p>We help GTM teams build predictable, scalable go-to-market systems.</p>
+                <a href="https://gtrocha.com">Book a Free GTM Audit</a>
+            </div>
+
+            <button class="btn" onclick="reset()">Recalculate</button>
+        </div>
+
+        <footer>
+            © 2026 GTR Services • Helping B2B founders build predictable go-to-market
+        </footer>
+    </div>
+
+    <script>
+        function calculate() {
+            const arr = parseFloat(document.getElementById('arr').value) || 0;
+            const marketing = parseFloat(document.getElementById('marketing').value) || 0;
+            const sales = parseFloat(document.getElementById('sales').value) || 0;
+            
+            const totalSpend = marketing + sales;
+            const costPerMillion = (totalSpend / arr) * 1000000;
+            const benchmarkCostPerMillion = 250000;
+            const wastedSpend = Math.max(0, totalSpend - (arr / 1000000) * benchmarkCostPerMillion);
+            const wastedPercent = (wastedSpend / totalSpend) * 100;
+            const potentialSavings = wastedSpend * 0.6;
+            const currentCAC = (totalSpend / (arr / 50000));
+            const optimizedCAC = currentCAC * 0.7;
+            const additionalRevenue = ((totalSpend - potentialSavings) / optimizedCAC) * 50000;
+
+            document.getElementById('wasted').textContent = '$' + Math.round(wastedSpend).toLocaleString();
+            document.getElementById('wasted-pct').textContent = wastedPercent.toFixed(1) + '% of GTM budget';
+            document.getElementById('savings').textContent = '$' + Math.round(potentialSavings).toLocaleString();
+            document.getElementById('revenue').textContent = '$' + Math.round(additionalRevenue).toLocaleString();
+            document.getElementById('cpp').textContent = '$' + Math.round(costPerMillion).toLocaleString();
+            document.getElementById('cac').textContent = '$' + Math.round(currentCAC).toLocaleString();
+            document.getElementById('opt-cac').textContent = '$' + Math.round(optimizedCAC).toLocaleString();
+            document.getElementById('total').textContent = '$' + totalSpend.toLocaleString();
+
+            let recommendation = '';
+            if (wastedPercent > 40) {
+                recommendation = "Critical: Your GTM is significantly inefficient. You're losing money on every customer. Immediate action needed.";
+            } else if (wastedPercent > 20) {
+                recommendation = "Warning: Your GTM efficiency is below industry standard. Significant room for improvement.";
+            } else if (wastedPercent > 10) {
+                recommendation = "Good: You're performing near industry average. Small optimizations could yield big results.";
+            } else {
+                recommendation = "Excellent: Your GTM is highly efficient. You're ahead of the curve.";
+            }
+            document.getElementById('recommendation').textContent = recommendation;
+
+            document.getElementById('inputs').classList.add('hidden');
+            document.getElementById('results').classList.remove('hidden');
+        }
+
+        function reset() {
+            document.getElementById('inputs').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
